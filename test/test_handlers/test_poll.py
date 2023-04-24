@@ -5,9 +5,11 @@ from aiogram.utils.exceptions import ChatNotFound, InvalidPeerID
 
 from fsm import PollFSM
 from handlers.base_handlers import BASE_CANCEL_SUFFIX, BASE_ERROR_TEXT
-from handlers.poll_handler import poll_take_question, POLL_NOT_VALID_QUESTION_TEXT, POLL_QUESTION_TEXT, \
-    poll_take_options, POLL_OPTIONS_TEXT, POLL_NOT_VALID_CNT_OPTIONS_TEXT, POLL_NOT_VALID_OPTION_LENGTH_TEXT, \
-    POLL_CHAT_ID_NO_VALID_TEXT, poll_take_chat_id, POLL_CHAT_NOT_FOUND_TEXT, POLL_CHAT_INVALID_ID_TEXT
+from handlers.poll_handler import (poll_take_question, POLL_NOT_VALID_QUESTION_TEXT, POLL_QUESTION_TEXT,
+                                   poll_take_options, POLL_OPTIONS_TEXT, POLL_NOT_VALID_CNT_OPTIONS_TEXT,
+                                   POLL_NOT_VALID_OPTION_LENGTH_TEXT, POLL_CHAT_ID_NO_VALID_TEXT,
+                                   poll_take_chat_id, POLL_CHAT_NOT_FOUND_TEXT, POLL_CHAT_INVALID_ID_TEXT
+                                   )
 
 
 class PollSenderMock:
@@ -100,8 +102,8 @@ async def test_poll_take_options(
 @pytest.mark.parametrize(
     'msg_text, valid_msg, poll_sender_mock',
     [
-        ('-123123123', 'not_ex', PollSenderMock(ex=ChatNotFound('mes'))),
-        ('-123123123', 'not_ex', PollSenderMock(ex=InvalidPeerID('mes'))),
+        ('-123123123', 'not_ex', PollSenderMock(ex=ChatNotFound('m'))),
+        ('-123123123', 'not_ex', PollSenderMock(ex=InvalidPeerID('m'))),
         ('-123123123', 'not_ex', PollSenderMock(ex=Exception())),
         ('-123123123', 'True', PollSenderMock()),
         ('1231a2331', 'not_msg', PollSenderMock()),

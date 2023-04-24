@@ -1,3 +1,4 @@
+import logging
 import re
 
 from aiogram import types, Dispatcher
@@ -27,17 +28,20 @@ EXCHANGE_NOT_VALID_TO_TEXT = (
 
 
 async def exchange_start(message: types.Message, state: FSMContext) -> None:
+    # заводим состояние (FSM) и предлагаем следующее действие пользователю
     await state.set_state(ExchangeFSM.wait_amount.state)
     await message.answer(EXCHANGE_START_TEXT + BASE_CANCEL_SUFFIX)
 
 
 async def exchange_take_from_info(message: types.Message, state: FSMContext):
+    # проверяем введенные данные
     parsed_msg = re.search(r'^(?P<amount>\d+(\.\d+)?)\s?(?P<from_>[a-zA-Z]+)$', message.text)
     if not parsed_msg:
         await message.answer(
             EXCHANGE_NOT_VALID_FROM_TEXT + BASE_CANCEL_SUFFIX)
         return
 
+    # запоминаем валидированные данные и предлагаем следующее действие
     await state.update_data(
         amount=parsed_msg['amount'], from_=parsed_msg['from_'])
     await state.set_state(ExchangeFSM.wait_convert_to.state)
@@ -46,38 +50,43 @@ async def exchange_take_from_info(message: types.Message, state: FSMContext):
 
 
 async def exchange_take_to_info(message: types.Message, state: FSMContext) -> None:
+    # проверяем введенные данные
     parsed_msg = re.search(r'^(?P<to>[a-zA-Z]+)$', message.text)
     if not parsed_msg:
         await message.answer(
             EXCHANGE_NOT_VALID_TO_TEXT + BASE_CANCEL_SUFFIX)
         return
 
+    # обращаемся к клиенту для конвертации и отправляем запрос
     user_data = await state.get_data()
     try:
         convertation_result = await exchange.convert(
             amount=user_data['amount'], from_=user_data['from_'], to=parsed_msg['to'])
         await message.answer(convertation_result.make_text_message())
     except ClientException as ex:
+        logging.error(ex)
         await message.answer(str(ex))
     except Exception as ex:
+        logging.error(ex)
         await message.answer(BASE_ERROR_TEXT)
     finally:
         await state.finish()
 
 
 def register_exchange_handlers(dp: Dispatcher) -> None:
+    # регистрируем хэндлеры
     dp.register_message_handler(
         exchange_start,
-        lambda message: message.chat.type == types.ChatType.PRIVATE,
+        lambda message: types.ChatType.PRIVATE == message.chat.type,
         commands='exchange'
     )
     dp.register_message_handler(
         exchange_take_from_info,
-        lambda message: message.chat.type == types.ChatType.PRIVATE,
+        lambda message: types.ChatType.PRIVATE == message.chat.type,
         state=ExchangeFSM.wait_amount.state
     )
     dp.register_message_handler(
         exchange_take_to_info,
-        lambda message: message.chat.type == types.ChatType.PRIVATE,
+        lambda message: types.ChatType.PRIVATE == message.chat.type,
         state=ExchangeFSM.wait_convert_to.state
     )

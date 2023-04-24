@@ -2,6 +2,10 @@ from clients.base import BaseClient
 
 
 class DuckClient(BaseClient):
+    """
+    Класс, реализующий взаимодействие с API сервиса с картинками
+    """
+
     base_url = 'https://random-d.uk'
     picture_path = '/api/random'
 

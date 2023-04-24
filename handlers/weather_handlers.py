@@ -1,3 +1,5 @@
+import logging
+
 from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
 
@@ -13,6 +15,7 @@ WEATHER_START_TEXT = (
 
 
 async def weather_start(message: types.Message, state: FSMContext) -> None:
+    # заводим состояние (FSM) и предлагаем следующее действие пользователю
     inline_location_btn = types.KeyboardButton(
         'Поделиться локацией', request_location=True)
     kb = types.ReplyKeyboardMarkup(
@@ -24,14 +27,18 @@ async def weather_start(message: types.Message, state: FSMContext) -> None:
 
 async def weather_with_location_from_btn(
         message: types.Message, state: FSMContext) -> None:
+    # читаем координаты из location и пытаемся получить погоду,
+    # при неудачи состояние пропадает
     try:
         weather_result = await weather.get_weather(
             lat=message.location.latitude, lon=message.location.longitude)
         await message.answer(
             weather_result.make_text_message(), reply_markup=types.ReplyKeyboardRemove())
     except ClientException as ex:
+        logging.error(ex)
         await message.answer(str(ex))
     except Exception as ex:
+        logging.error(ex)
         await message.answer(BASE_ERROR_TEXT)
     finally:
         await state.finish()
@@ -39,6 +46,8 @@ async def weather_with_location_from_btn(
 
 async def weather_with_location_from_text(
         message: types.Message, state: FSMContext) -> None:
+    # читаем название города из текста и пытаемся получить погоду,
+    # при неудачи состояние пропадает
     city_info = message.text.split(',')
     city_name = city_info[0].strip()
     country_code = None
@@ -51,27 +60,30 @@ async def weather_with_location_from_text(
         await message.answer(
             weather_result.make_text_message(), reply_markup=types.ReplyKeyboardRemove())
     except ClientException as ex:
+        logging.error(ex)
         await message.answer(str(ex))
     except Exception as ex:
+        logging.error(ex)
         await message.answer(BASE_ERROR_TEXT)
     finally:
         await state.finish()
 
 
 def register_weather_handlers(dp: Dispatcher) -> None:
+    # регистрируем хэндлеры
     dp.register_message_handler(
         weather_start,
-        lambda message: message.chat.type == types.ChatType.PRIVATE,
+        lambda message: types.ChatType.PRIVATE == message.chat.type,
         commands='weather'
     )
     dp.register_message_handler(
         weather_with_location_from_btn,
-        lambda message: message.chat.type == types.ChatType.PRIVATE,
+        lambda message: types.ChatType.PRIVATE == message.chat.type,
         content_types='location',
         state=WeatherFSM.wait_location.state
     )
     dp.register_message_handler(
         weather_with_location_from_text,
-        lambda message: message.chat.type == types.ChatType.PRIVATE,
+        lambda message: types.ChatType.PRIVATE == message.chat.type,
         state=WeatherFSM.wait_location.state
     )

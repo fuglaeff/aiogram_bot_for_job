@@ -1,5 +1,9 @@
 from aiogram.dispatcher.filters.state import State, StatesGroup
 
+"""
+Описываем интерфейсы FSM
+"""
+
 
 class WeatherFSM(StatesGroup):
     wait_location = State()
