@@ -1,11 +1,17 @@
+import os
+
 from clients.base import BaseClient
 from models import ExchangeModel
 
 
 class ExchangeClient(BaseClient):
+    """
+    Класс, реализующий взаимодействие с API сервиса с конвертацией валют
+    """
+
     base_url = 'https://api.apilayer.com'
     headers = {
-        'apikey': 'NjUgDzjZX8lwFXC6OE4TrZvZKpTihRbv',
+        'apikey': os.getenv('EXCHANGE_API'),
     }
     convert_path = '/exchangerates_data/convert'
 

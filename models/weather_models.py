@@ -43,13 +43,17 @@ class RainSnow(BaseModel):
 
 
 class WeatherModel(BaseModel):
+    """
+    Pydantic модель для работы с json ответами от API
+    """
     weather: list[WeatherDesc]
     main: WeatherMain
     wind: Wind | None = None
     rain: RainSnow | None = None
     snow: RainSnow | None = None
 
-    def make_text_message(self):
+    def make_text_message(self) -> str:
+        # формируем сообщение
         text = self.weather[0].description
         text += (
             '\n\nТемпература:\n' +
@@ -84,6 +88,11 @@ class WeatherModel(BaseModel):
 
 
 def convert_wind_deg_to_human(value: float | int) -> str:
+    """
+    Функция для перевода градусов в юзерфрендли формат направления ветра
+    :param value:
+    :return:
+    """
     if 348.75 <= value or value < 11.25:
         return '↓'
     elif 11.25 <= value < 78.75:

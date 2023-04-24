@@ -1,3 +1,5 @@
+import logging
+
 from aiogram import types, Dispatcher
 from aiogram.dispatcher import FSMContext
 from aiogram.utils import exceptions
@@ -24,23 +26,25 @@ POLL_CHAT_INVALID_ID_TEXT = 'Похоже меня нет в этой групп
 
 
 async def poll_start(message: types.Message, state: FSMContext) -> None:
+    # заводим состояние (FSM) и предлагаем следующее действие пользователю
     await state.set_state(PollFSM.wait_poll_question.state)
-    await message.answer(
-        POLL_START_TEXT + BASE_CANCEL_SUFFIX)
+    await message.answer(POLL_START_TEXT + BASE_CANCEL_SUFFIX)
 
 
 async def poll_take_question(message: types.Message, state: FSMContext) -> None:
+    # проверяем введенные данные
     if not 0 < len(message.text) < 301:
         await message.answer(POLL_NOT_VALID_QUESTION_TEXT + BASE_CANCEL_SUFFIX)
         return
 
+    # запоминаем валидированные данные и предлагаем следующее действие
     await state.update_data(question=message.text)
     await state.set_state(PollFSM.wait_poll_options.state)
-    await message.answer(
-        POLL_QUESTION_TEXT + BASE_CANCEL_SUFFIX)
+    await message.answer(POLL_QUESTION_TEXT + BASE_CANCEL_SUFFIX)
 
 
 async def poll_take_options(message: types.Message, state: FSMContext) -> None:
+    # проверяем введенные данные
     options = message.text.strip().split('\n')
     if not 1 < len(options) < 11:
         await message.answer(POLL_NOT_VALID_CNT_OPTIONS_TEXT + BASE_CANCEL_SUFFIX)
@@ -50,32 +54,38 @@ async def poll_take_options(message: types.Message, state: FSMContext) -> None:
         await message.answer(POLL_NOT_VALID_OPTION_LENGTH_TEXT + BASE_CANCEL_SUFFIX)
         return
 
+    # запоминаем валидированные данные и предлагаем следующее действие
     await state.update_data(options=options)
     await state.set_state(PollFSM.wait_chat_id.state)
-    await message.answer(
-        POLL_OPTIONS_TEXT + BASE_CANCEL_SUFFIX)
+    await message.answer(POLL_OPTIONS_TEXT + BASE_CANCEL_SUFFIX)
 
 
 async def poll_take_chat_id(message: types.Message, state: FSMContext) -> None:
-    if not (message.text.isdigit() or message.text[0] == '-' and message.text[1:].isdigit()):
-        await message.answer(
-            POLL_CHAT_ID_NO_VALID_TEXT + BASE_CANCEL_SUFFIX)
+    # проверяем введенные данные
+    if not (message.text.isdigit() or
+            message.text[0] == '-' and message.text[1:].isdigit()
+            ):
+        await message.answer(POLL_CHAT_ID_NO_VALID_TEXT + BASE_CANCEL_SUFFIX)
         return
 
+    # отправляем опрос в чат (при ошибке просим изменить чат айди)
     poll_data = await state.get_data()
     try:
         await telegram_bot.send_poll(message.text, poll_data['question'], poll_data['options'])
         await state.finish()
     except exceptions.ChatNotFound as ex:
+        logging.error(ex)
         await message.answer(POLL_CHAT_NOT_FOUND_TEXT + BASE_CANCEL_SUFFIX)
     except exceptions.InvalidPeerID as ex:
+        logging.error(ex)
         await message.answer(POLL_CHAT_INVALID_ID_TEXT + BASE_CANCEL_SUFFIX)
     except Exception as ex:
-        print(ex)
+        logging.error(ex)
         await message.answer(BASE_ERROR_TEXT + BASE_CANCEL_SUFFIX)
 
 
 def register_poll_handlers(dp: Dispatcher) -> None:
+    # регистрируем хэндлеры
     dp.register_message_handler(
         poll_start,
         lambda message: types.ChatType.PRIVATE == message.chat.type,

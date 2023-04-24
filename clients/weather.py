@@ -1,13 +1,19 @@
+import os
+
 from clients.base import BaseClient
 from models import Coordinates, WeatherModel
 
 
 class WeatherClient(BaseClient):
+    """
+    Класс, реализующий взаимодействие с API сервиса с погодой
+    """
+
     base_url = 'https://api.openweathermap.org'
     weather_path = '/data/2.5/weather'
     city_path = '/geo/1.0/direct'
     base_params = {
-        'appid': '48da60348d886a715f9de787adfd723b',
+        'appid': os.getenv('WEATHER_API'),
         'units': 'metric',
         'lang': 'ru',
     }
@@ -17,6 +23,9 @@ class WeatherClient(BaseClient):
         city_name: str,
         country_code: str | None = None
     ) -> tuple[float, float]:
+        """
+        Вспомогательный метод, для получиения координат из названия города
+        """
         q = city_name
         if country_code is not None:
             q += f',{country_code}'
@@ -29,9 +38,12 @@ class WeatherClient(BaseClient):
 
     async def _get_weather_info(
             self, lat: float | None = None, lon: float | None = None) -> WeatherModel:
-        resourse = await self.get(self.weather_path, params={'lat': lat, 'lon': lon})
+        """
+        Вспомогательный метод, для получиения погоды по координатам
+        """
+        resource = await self.get(self.weather_path, params={'lat': lat, 'lon': lon})
 
-        return WeatherModel(**resourse)
+        return WeatherModel(**resource)
 
     async def get_weather(
         self,
@@ -40,6 +52,10 @@ class WeatherClient(BaseClient):
         city_name: str | None = None,
         country_code: str | None = None
     ) -> WeatherModel:
+        """
+        Основной метод, реализующий работу с веб сервисом
+        """
+
         if city_name is not None:
             lat, lon = await self._get_lat_lon_from_city_name(city_name, country_code)
 

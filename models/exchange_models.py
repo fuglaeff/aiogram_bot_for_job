@@ -14,13 +14,17 @@ class RateQuery(BaseModel):
 
 
 class ExchangeModel(BaseModel):
+    """
+    Pydantic модель для работы с json ответами от API
+    """
     date: date
     info: RateInfo
     query: RateQuery
     result: float
     success: bool
 
-    def make_text_message(self):
+    def make_text_message(self) -> str:
+        # формируем сообщение
         return (f'{self.date}\n' +
                 f'{self.query.amount} {self.query.from_} -> {self.result} {self.query.to}\n\n' +
                 f'1 {self.query.from_} -> {self.info.rate} {self.query.to}\n' +
